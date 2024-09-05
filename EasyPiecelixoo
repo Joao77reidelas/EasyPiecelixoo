@@ -1,0 +1,399 @@
+local OrionLib = loadstring(game:HttpGet(('https://raw.githubusercontent.com/shlexware/Orion/main/source')))()
+
+local Window = OrionLib:MakeWindow({
+    Name = "easy piece",
+    HidePremium = false,
+    SaveConfig = true,
+    ConfigFolder = "N3nhum"
+})
+
+local Tab = Window:MakeTab({
+    Name = "Kill Auras",
+    Icon = "rbxassetid://4483345998",
+    PremiumOnly = false
+})
+
+local Section = Tab:AddSection({
+    Name = "kill auras"
+})
+
+local isToggleActive = false
+
+Tab:AddToggle({
+    Name = "Combat Kill aura✊🏻",
+    Default = false,
+    Callback = function(Value)
+        isToggleActive = Value
+        if isToggleActive then
+            while isToggleActive do
+                wait(0.0001)
+                local co = coroutine.create(function()
+                    local args = {
+                        [1] = "Combat1"
+                    }
+                    game:GetService("Players").LocalPlayer.Character.Combat.Client.Event:FireServer(unpack(args))
+                end)
+                coroutine.resume(co)
+            end
+        end
+    end
+})
+
+Tab:AddToggle({
+    Name = "Metal Leg Kill aura🦵🏻🔥",
+    Default = false,
+    Callback = function(Value)
+        isToggleActive = Value
+        if isToggleActive then
+            while isToggleActive do
+                wait(0.0001)
+                local co = coroutine.create(function()
+                    local args = {
+    [1] = "MetalLeg1"
+}
+
+game:GetService("Players").LocalPlayer.Character:FindFirstChild("Metal Leg").ClientMetal.Event:FireServer(unpack(args))
+
+                end)
+                coroutine.resume(co)
+            end
+        end
+    end
+})
+
+Tab:AddToggle({
+    Name = "Karate kill aura🥋💧",
+    Default = false,
+    Callback = function(Value)
+        isToggleActive = Value
+        if isToggleActive then
+            while isToggleActive do
+                wait(0.0001)
+                local co = coroutine.create(function()
+                   local args = {
+    [1] = "waterpunch"
+}
+
+game:GetService("Players").LocalPlayer.Character:FindFirstChild("Fish Karate").ClientFish.Event:FireServer(unpack(args))
+ 
+
+                end)
+                coroutine.resume(co)
+            end
+        end
+    end
+})
+
+Tab:AddToggle({
+    Name = "Dragon🔥🐉",
+    Default = false,
+    Callback = function(Value)
+        isToggleActive = Value
+        if isToggleActive then
+            while isToggleActive do
+                wait(0.0001)
+                local co = coroutine.create(function()
+                    local args = {
+    [1] = "waterflow1"
+}
+
+game:GetService("Players").LocalPlayer.Character:FindFirstChild("Dragon Combat").ClientDragon.Event:FireServer(unpack(args))
+
+
+                end)
+                coroutine.resume(co)
+            end
+        end
+    end
+})
+
+Tab:AddToggle({
+    Name = "metal legV2🌋(SUPER Lag use metal legV1)",
+    Default = false,
+    Callback = function(Value)
+        isToggleActive = Value
+        if isToggleActive then
+            while isToggleActive do
+                wait(0.0001)
+                local co = coroutine.create(function()
+                    local args = {
+    [1] = "MetalLeg1",
+    [2] = true
+}
+
+game:GetService("Players").LocalPlayer.Character:FindFirstChild("Fire Leg").ClientFireLeg.Event:FireServer(unpack(args))
+
+
+                end)
+                coroutine.resume(co)
+            end
+        end
+    end
+})
+
+local Tab = Window:MakeTab({
+    Name = "Teleports",
+    Icon = "rbxassetid://4483345998",
+    PremiumOnly = false
+})
+
+local Section = Tab:AddSection({
+    Name = "islands"
+})
+
+Tab:AddButton({
+	Name = "Start Island(lvl1)",
+	Callback = function()
+
+local player = game.Players.LocalPlayer
+local character = player.Character or player.CharacterAdded:Wait()
+local humanoidRootPart = character:WaitForChild("HumanoidRootPart")
+
+humanoidRootPart.CFrame = CFrame.new(-132, 3, -122)
+   		
+  	end    
+})
+
+Tab:AddButton({
+	Name = "Village Island(lvl10) ",
+	Callback = function()
+
+local player = game.Players.LocalPlayer
+local character = player.Character or player.CharacterAdded:Wait()
+local humanoidRootPart = character:WaitForChild("HumanoidRootPart")
+
+humanoidRootPart.CFrame = CFrame.new(-168, 5, -824)
+   		
+  	end    
+})
+
+Tab:AddButton({
+	Name = "city of shells(lvl30)",
+	Callback = function()
+
+local player = game.Players.LocalPlayer
+local character = player.Character or player.CharacterAdded:Wait()
+local humanoidRootPart = character:WaitForChild("HumanoidRootPart")
+
+humanoidRootPart.CFrame = CFrame.new(-1208, 6, -670)
+   		
+  	end    
+})
+
+Tab:AddButton({
+	Name = "Arlong Island(LvL50)",
+	Callback = function()
+
+local player = game.Players.LocalPlayer
+local character = player.Character or player.CharacterAdded:Wait()
+local humanoidRootPart = character:WaitForChild("HumanoidRootPart")
+
+humanoidRootPart.CFrame = CFrame.new(-658, 6, -1611)
+   		
+  	end    
+})
+
+Tab:AddButton({
+	Name = "Logue Town(Lvl80) ",
+	Callback = function()
+
+local player = game.Players.LocalPlayer
+local character = player.Character or player.CharacterAdded:Wait()
+local humanoidRootPart = character:WaitForChild("HumanoidRootPart")
+
+humanoidRootPart.CFrame = CFrame.new(402, 22, -1347)
+   		
+  	end    
+})
+
+Tab:AddButton({
+	Name = "Baratie(LvL100)",
+	Callback = function()
+
+local player = game.Players.LocalPlayer
+local character = player.Character or player.CharacterAdded:Wait()
+local humanoidRootPart = character:WaitForChild("HumanoidRootPart")
+
+humanoidRootPart.CFrame = CFrame.new(308, 5, -2298)
+   		
+  	end    
+})
+
+Tab:AddButton({
+	Name = "Orange city(LvL125)",
+	Callback = function()
+
+local player = game.Players.LocalPlayer
+local character = player.Character or player.CharacterAdded:Wait()
+local humanoidRootPart = character:WaitForChild("HumanoidRootPart")
+
+humanoidRootPart.CFrame = CFrame.new(1298, 6, -1286)
+   		
+  	end    
+})
+
+Tab:AddButton({
+	Name = "Coliseum(lvl175) ",
+	Callback = function()
+
+local player = game.Players.LocalPlayer
+local character = player.Character or player.CharacterAdded:Wait()
+local humanoidRootPart = character:WaitForChild("HumanoidRootPart")
+
+humanoidRootPart.CFrame = CFrame.new(677, 11, -542)
+   		
+  	end    
+})
+
+Tab:AddButton({
+	Name = "Mihawk Island(lvl225) ",
+	Callback = function()
+
+local player = game.Players.LocalPlayer
+local character = player.Character or player.CharacterAdded:Wait()
+local humanoidRootPart = character:WaitForChild("HumanoidRootPart")
+
+humanoidRootPart.CFrame = CFrame.new(1050, 7, -2027)
+   		
+  	end    
+})
+
+Tab:AddButton({
+	Name = "Katakuri island",
+	Callback = function()
+
+local player = game.Players.LocalPlayer
+local character = player.Character or player.CharacterAdded:Wait()
+local humanoidRootPart = character:WaitForChild("HumanoidRootPart")
+
+humanoidRootPart.CFrame = CFrame.new(4490, 47, -3299)
+   		
+  	end    
+})
+
+Tab:AddButton({
+	Name = "Snow island",
+	Callback = function()
+
+local player = game.Players.LocalPlayer
+local character = player.Character or player.CharacterAdded:Wait()
+local humanoidRootPart = character:WaitForChild("HumanoidRootPart")
+
+humanoidRootPart.CFrame = CFrame.new(4269, 19, -4252)
+   		
+  	end    
+})
+
+Tab:AddButton({
+	Name = "doflamingo",
+	Callback = function()
+
+local player = game.Players.LocalPlayer
+local character = player.Character or player.CharacterAdded:Wait()
+local humanoidRootPart = character:WaitForChild("HumanoidRootPart")
+
+humanoidRootPart.CFrame = CFrame.new(1545, 125, -2551)
+   		
+  	end    
+})
+
+Tab:AddButton({
+	Name = "Law",
+	Callback = function()
+
+local player = game.Players.LocalPlayer
+local character = player.Character or player.CharacterAdded:Wait()
+local humanoidRootPart = character:WaitForChild("HumanoidRootPart")
+
+humanoidRootPart.CFrame = CFrame.new(2000, 62, -2615)
+   		
+  	end    
+})
+
+Tab:AddButton({
+	Name = "green zone",
+	Callback = function()
+
+local player = game.Players.LocalPlayer
+local character = player.Character or player.CharacterAdded:Wait()
+local humanoidRootPart = character:WaitForChild("HumanoidRootPart")
+
+humanoidRootPart.CFrame = CFrame.new(2737, 11, -3905)
+   		
+  	end    
+})
+
+local Tab = Window:MakeTab({
+    Name = "Others",
+    Icon = "rbxassetid://4483345998",
+    PremiumOnly = false
+})
+
+local Section = Tab:AddSection({
+    Name = "Others"
+})
+
+Tab:AddButton({
+	Name = "Go to sea 2(No need for level 245, Level 1 can go)",
+	Callback = function()
+local args = {
+    [1] = "Purchase",
+    [2] = "Sea2"
+}
+
+game:GetService("ReplicatedStorage").Shop_Remote:InvokeServer(unpack(args))
+
+   		
+  	end    
+})
+
+Tab:AddButton({
+	Name = "Go to Sea 1",
+	Callback = function()
+local args = {
+    [1] = "Purchase",
+    [2] = "Sea1"
+}
+
+game:GetService("ReplicatedStorage").Shop_Remote:InvokeServer(unpack(args))
+
+   		
+  	end    
+})
+
+Tab:AddButton({
+	Name = "lvl Max and inf money(Click here first)",
+	Callback = function()
+while true do
+wait(0.001)
+local args = {
+    [1] = "AcceptQuest",
+    [2] = "Message1"
+}
+
+game:GetService("ReplicatedStorage").Quest_Remote:FireServer(unpack(args))
+end
+
+   		
+  	end    
+})
+
+Tab:AddButton({
+	Name = "lvl Max and inf money(Click here second)",
+	Callback = function()
+local player = game.Players.LocalPlayer
+local character = player.Character or player.CharacterAdded:Wait()
+local humanoidRootPart = character:WaitForChild("HumanoidRootPart")
+
+humanoidRootPart.CFrame = CFrame.new(-769, 14, -1839)			
+  	end    
+})
+
+Tab:AddButton({
+	Name = "lvl Max and inf money(Click here third)",
+	Callback = function()
+local ProximityPrompt = Game.Workspace.Islands.Ilha_Arlong.DeliverFishmanKid.Torso.ProximityPrompt
+
+ProximityPrompt.HoldDuration = 0
+  	end    
+})

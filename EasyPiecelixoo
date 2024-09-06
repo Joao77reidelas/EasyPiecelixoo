@@ -362,7 +362,7 @@ game:GetService("ReplicatedStorage").Shop_Remote:InvokeServer(unpack(args))
 })
 
 Tab:AddButton({
-	Name = "lvl Max and inf money(Click here first)",
+	Name = "lvl Max and inf money(Click here first and need lvl 50)",
 	Callback = function()
 while true do
 wait(0.001)
@@ -379,7 +379,7 @@ end
 })
 
 Tab:AddButton({
-	Name = "lvl Max and inf money(Click here second)",
+	Name = "lvl Max and inf money(Click here second and need lvl 50)",
 	Callback = function()
 local player = game.Players.LocalPlayer
 local character = player.Character or player.CharacterAdded:Wait()
@@ -390,7 +390,7 @@ humanoidRootPart.CFrame = CFrame.new(-769, 14, -1839)
 })
 
 Tab:AddButton({
-	Name = "lvl Max and inf money(Click here third)",
+	Name = "lvl Max and inf money(Click here third) need lvl 50",
 	Callback = function()
 local ProximityPrompt = Game.Workspace.Islands.Ilha_Arlong.DeliverFishmanKid.Torso.ProximityPrompt
 

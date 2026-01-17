@@ -1,0 +1,1733 @@
+local screenGui = Instance.new("ScreenGui")
+screenGui.Name = "CreditosGui"
+screenGui.ResetOnSpawn = false
+screenGui.Parent = game.Players.LocalPlayer:WaitForChild("PlayerGui")
+
+-- Criar Frame (container da GUI)
+local frame = Instance.new("Frame")
+frame.Size = UDim2.new(0, 300, 0, 50) -- Tamanho pequeno
+frame.Position = UDim2.new(0.5, -150, 0.6, 0) -- Um pouco abaixo do meio da tela
+frame.BackgroundTransparency = 1 -- Totalmente transparente
+frame.BorderSizePixel = 0
+frame.Parent = screenGui
+
+-- Criar TextLabel
+local textLabel = Instance.new("TextLabel")
+textLabel.Size = UDim2.new(1, 0, 1, 0)
+textLabel.Position = UDim2.new(0, 0, 0, 0)
+textLabel.BackgroundTransparency = 1 -- Transparente
+textLabel.Text = "made By Rogenaldo tiktok:me.sobe.por.favor"
+textLabel.TextColor3 = Color3.fromRGB(255, 255, 255) -- Texto branco
+textLabel.TextStrokeTransparency = 0.5 -- Contorno para melhor visibilidade
+textLabel.Font = Enum.Font.SourceSansBold
+textLabel.TextSize = 16
+textLabel.TextScaled = false
+textLabel.Parent = frame
+task.wait()
+-- Dragon Drive
+-- LocalScript em StarterPlayer > StarterPlayerScripts
+
+local Players = game:GetService("Players")
+local TweenService = game:GetService("TweenService")
+local SoundService = game:GetService("SoundService")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+
+local player = Players.LocalPlayer
+local playerGui = player:WaitForChild("PlayerGui")
+
+print("🎮 Script Dragon Drive carregado!")
+
+-- ===== CONFIGURAÇÕES =====
+local KICK_FORCE = 230
+local KICK_COOLDOWN = 3
+local UP_DISTANCE = 20
+local UP_TIME = 0.5
+local FLOAT_HOLD_TIME = 0.8
+local KICK_DELAY = 0.4
+-- =========================
+
+local isKicking = false
+local isOnCooldown = false
+
+-- === FUNÇÃO PARA MOSTRAR MENSAGEM ===
+local function showMessage(message, duration)
+    local messagesEvent = ReplicatedStorage:FindFirstChild("Events")
+    if messagesEvent then
+        messagesEvent = messagesEvent:FindFirstChild("Messages")
+        if messagesEvent then
+            local sendMessage = messagesEvent:FindFirstChild("SendMessage")
+            if sendMessage then
+                firesignal(sendMessage.OnClientEvent, message, duration)
+                print("📢 Mensagem enviada: " .. message)
+            end
+        end
+    end
+end
+
+-- === FUNÇÃO PARA VERIFICAR SE O JOGADOR TEM A BOLA ===
+local function playerHasBall()
+    local playerFolder = workspace:FindFirstChild(player.Name)
+    
+    if not playerFolder then
+        print("❌ Pasta do LocalPlayer não encontrada no Workspace!")
+        return false
+    end
+    
+    local ball = playerFolder:FindFirstChild("Ball")
+    
+    if ball then
+        print("✅ LocalPlayer possui a bola!")
+        return true
+    else
+        print("❌ LocalPlayer NÃO possui a bola!")
+        return false
+    end
+end
+
+-- === FUNÇÃO PARA ADICIONAR EFEITO SAE NA BOLA ===
+local function addSaeEffect(ball)
+    if not ball or not ball:IsA("BasePart") then return end
+    
+    local vfxFolder = ReplicatedStorage:FindFirstChild("VFX")
+    if not vfxFolder then return end
+    
+    local saeEffect = vfxFolder:FindFirstChild("SaeCurvedShot")
+    if not saeEffect then return end
+    
+    local effectClone = saeEffect:Clone()
+    effectClone.CanCollide = false
+    effectClone.Anchored = false
+    effectClone.Massless = true
+    
+    local weld = Instance.new("WeldConstraint")
+    weld.Part0 = ball
+    weld.Part1 = effectClone
+    weld.Parent = effectClone
+    
+    effectClone.CFrame = ball.CFrame
+    effectClone.Parent = ball
+    
+    print("✨ Efeito adicionado à bola!")
+    
+    task.delay(1, function()
+        if effectClone and effectClone.Parent then
+            effectClone:Destroy()
+        end
+    end)
+end
+
+-- === FUNÇÃO PARA ADICIONAR EFEITO SAE NO JOGADOR ===
+local function addSaeEffectToPlayer(character)
+    if not character then return nil end
+    
+    local root = character:FindFirstChild("HumanoidRootPart")
+    if not root then return nil end
+    
+    local vfxFolder = ReplicatedStorage:FindFirstChild("VFX")
+    if not vfxFolder then return nil end
+    
+    local saeEffect = vfxFolder:FindFirstChild("SaeCurvedShot")
+    if not saeEffect then return nil end
+    
+    local effectClone = saeEffect:Clone()
+    effectClone.CanCollide = false
+    effectClone.Anchored = false
+    effectClone.Massless = true
+    
+    local weld = Instance.new("WeldConstraint")
+    weld.Part0 = root
+    weld.Part1 = effectClone
+    weld.Parent = effectClone
+    
+    effectClone.CFrame = root.CFrame
+    effectClone.Parent = character
+    
+    print("✨ Efeito adicionado ao jogador!")
+    
+    return effectClone
+end
+
+-- === FUNÇÃO PARA TOCAR SOM DE SUBIDA ===
+local function playRiseSound()
+    local soundPath = SoundService:FindFirstChild("Characters")
+    if soundPath then
+        soundPath = soundPath:FindFirstChild("DonLorenzo")
+        if soundPath then
+            local riseSound = soundPath:FindFirstChild("QuickDefense")
+            if riseSound and riseSound:IsA("Sound") then
+                riseSound:Play()
+                print("🔊 Som de subida tocado!")
+            end
+        end
+    end
+end
+
+-- === FUNÇÃO PARA TOCAR SOM DE CHUTE ===
+local function playKickSound()
+    local soundPath = SoundService:FindFirstChild("Characters")
+    if soundPath then
+        soundPath = soundPath:FindFirstChild("Sae")
+        if soundPath then
+            local kickSound = soundPath:FindFirstChild("CurvedShot")
+            if kickSound and kickSound:IsA("Sound") then
+                kickSound:Play()
+                print("🔊 Som de chute tocado!")
+            end
+        end
+    end
+end
+
+-- === FUNÇÃO PARA ANIMAR O COOLDOWN VISUAL ===
+local function animateCooldown(fillFrame)
+    if not fillFrame then 
+        warn("⚠️ Fill não encontrado!")
+        return 
+    end
+    
+    print("✅ Fill encontrado, iniciando animação...")
+    
+    fillFrame.Size = UDim2.new(1, 0, 0, 0)
+    fillFrame.Visible = true
+    fillFrame.Size = UDim2.new(1, 0, 0, 60)
+    
+    local tweenInfo = TweenInfo.new(
+        KICK_COOLDOWN,
+        Enum.EasingStyle.Linear,
+        Enum.EasingDirection.InOut
+    )
+    
+    local tween = TweenService:Create(fillFrame, tweenInfo, {
+        Size = UDim2.new(1, 0, 0, 0)
+    })
+    
+    tween:Play()
+    print("🔄 Cooldown visual ativado!")
+end
+
+-- === FUNÇÃO DO DRAGON DRIVE ===
+local function dragonDrive()
+    print("🐉 Função dragonDrive() chamada!")
+    
+    if isKicking or isOnCooldown then
+        print("⏳ Aguarde o cooldown terminar!")
+        return
+    end
+    
+    if not playerHasBall() then
+        print("🚫 Você precisa ter a bola!")
+        showMessage("Must Have The Ball", 1.5)
+        return
+    end
+    
+    local character = player.Character
+    if not character then 
+        warn("❌ Character não encontrado!")
+        return 
+    end
+    
+    local humanoidRootPart = character:FindFirstChild("HumanoidRootPart")
+    local humanoid = character:FindFirstChild("Humanoid")
+    if not humanoidRootPart or not humanoid then 
+        warn("❌ HumanoidRootPart ou Humanoid não encontrado!")
+        return 
+    end
+    
+    isKicking = true
+    isOnCooldown = true
+    
+    print("✅ Dragon Drive iniciado!")
+    
+    -- Toca animação
+    local animTrack = nil
+    local animator = humanoid:FindFirstChild("Animator")
+    if animator then
+        local animObj = ReplicatedStorage:WaitForChild("Anims"):WaitForChild("SU"):WaitForChild("StandFloat")
+        animTrack = animator:LoadAnimation(animObj)
+        animTrack:Play()
+    end
+    
+    -- Som de subida
+    playRiseSound()
+    
+    -- Efeito no jogador
+    local playerEffect = addSaeEffectToPlayer(character)
+    
+    -- Congela
+    local originalWalkSpeed = humanoid.WalkSpeed
+    humanoid.WalkSpeed = 0
+    
+    -- Sobe
+    local upVelocity = UP_DISTANCE / UP_TIME
+    local bvUp = Instance.new("BodyVelocity")
+    bvUp.MaxForce = Vector3.new(0, math.huge, 0)
+    bvUp.Velocity = Vector3.new(0, upVelocity, 0)
+    bvUp.Parent = humanoidRootPart
+    
+    task.delay(UP_TIME, function()
+        if bvUp then bvUp:Destroy() end
+        
+        -- Remove efeito do jogador com fade suave
+        if playerEffect and playerEffect.Parent then
+            local fadeDuration = 0.4
+            local fadeSteps = 20
+            local fadeInterval = fadeDuration / fadeSteps
+            
+            task.spawn(function()
+                for i = 1, fadeSteps do
+                    if playerEffect and playerEffect.Parent then
+                        playerEffect.Transparency = i / fadeSteps
+                        
+                        for _, descendant in pairs(playerEffect:GetDescendants()) do
+                            if descendant:IsA("BasePart") or descendant:IsA("MeshPart") then
+                                descendant.Transparency = i / fadeSteps
+                            elseif descendant:IsA("ParticleEmitter") then
+                                descendant.Transparency = NumberSequence.new(i / fadeSteps)
+                            elseif descendant:IsA("Beam") or descendant:IsA("Trail") then
+                                descendant.Transparency = NumberSequence.new(i / fadeSteps)
+                            end
+                        end
+                        
+                        task.wait(fadeInterval)
+                    else
+                        break
+                    end
+                end
+                
+                if playerEffect and playerEffect.Parent then
+                    playerEffect:Destroy()
+                    print("🗑️ Efeito removido do jogador com fade!")
+                end
+            end)
+        end
+        
+        -- Para no ar
+        local bvHold = Instance.new("BodyVelocity")
+        bvHold.MaxForce = Vector3.new(math.huge, math.huge, math.huge)
+        bvHold.Velocity = Vector3.new(0, 0, 0)
+        bvHold.Parent = humanoidRootPart
+        
+        -- Som de chute
+        task.delay(KICK_DELAY - 0.5, function()
+            playKickSound()
+        end)
+        
+        task.wait(KICK_DELAY)
+        
+        if playerHasBall() then
+            local camera = workspace.CurrentCamera
+            local kickDirection = camera.CFrame.LookVector.Unit
+            
+            local shootEvent = ReplicatedStorage:FindFirstChild("Events")
+            if shootEvent then
+                shootEvent = shootEvent:FindFirstChild("ShootBall")
+                if shootEvent then
+                    shootEvent:FireServer(kickDirection, KICK_FORCE)
+                    print("⚽ Bola chutada!")
+                    
+                    -- Efeito na bola
+                    task.delay(0.1, function()
+                        local ballInWorld = workspace:FindFirstChild("Ball") or workspace:FindFirstChild("SoccerBall")
+                        if ballInWorld then
+                            addSaeEffect(ballInWorld)
+                        end
+                    end)
+                end
+            end
+        end
+        
+        task.delay(FLOAT_HOLD_TIME, function()
+            if animTrack then animTrack:Stop() end
+            
+            if bvHold then bvHold:Destroy() end
+            humanoid.WalkSpeed = originalWalkSpeed
+            isKicking = false
+        end)
+    end)
+    
+    -- Cooldown visual na Hotbar
+    local hotbar = playerGui:FindFirstChild("Hotbar")
+    if hotbar then
+        print("✅ Hotbar encontrada!")
+        local container = hotbar:FindFirstChild("Container")
+        if container then
+            print("✅ Container encontrado!")
+            for _, holder in ipairs(container:GetChildren()) do
+                if holder:IsA("Frame") and holder.Name == "Holder" then
+                    local widget = holder:FindFirstChild("Widget")
+                    if widget then
+                        local label = widget:FindFirstChild("Label")
+                        
+                        if label and label:IsA("TextLabel") then
+                            print("🔍 Label encontrado com texto: '" .. label.Text .. "'")
+                            
+                            if label.Text == "1" then
+                                print("✅ Holder com Label '1' encontrado!")
+                                
+                                local fill = widget:FindFirstChild("Fill")
+                                if fill then
+                                    print("✅ Fill encontrado no Holder correto!")
+                                    animateCooldown(fill)
+                                    break
+                                else
+                                    warn("❌ Fill não encontrado no Widget do Holder '1'!")
+                                end
+                            end
+                        end
+                    end
+                end
+            end
+        else
+            warn("❌ Container não encontrado!")
+        end
+    else
+        warn("❌ Hotbar não encontrada!")
+    end
+    
+    task.wait(KICK_COOLDOWN)
+    isOnCooldown = false
+    
+    print("✅ Dragon Drive pronto para usar novamente!")
+end
+
+-- === PROCURA E SUBSTITUI O BOTÃO NA HOTBAR ===
+local function setupHotbarButton()
+    print("🔍 Procurando Hotbar...")
+    
+    local hotbar = playerGui:WaitForChild("Hotbar", 10)
+    if not hotbar then
+        warn("❌ Hotbar não encontrada após 10 segundos!")
+        return
+    end
+    
+    print("✅ Hotbar encontrada!")
+    
+    local container = hotbar:WaitForChild("Container", 10)
+    if not container then
+        warn("❌ Container não encontrado!")
+        return
+    end
+    
+    print("✅ Container encontrado!")
+    print("🔍 Holders no Container:")
+    
+    for _, holder in ipairs(container:GetChildren()) do
+        if holder:IsA("Frame") and holder.Name == "Holder" then
+            local widget = holder:FindFirstChild("Widget")
+            if widget then
+                local label = widget:FindFirstChild("Label")
+                
+                if label and label:IsA("TextLabel") then
+                    print("   - Holder com Label: '" .. label.Text .. "'")
+                    
+                    if label.Text == "1" then
+                        print("✅ Holder com Label '1' ENCONTRADO!")
+                        
+                        local oldButton = widget:FindFirstChild("TextButton")
+                        local oldBottomText = widget:FindFirstChild("BottomText")
+                        local oldLabel = widget:FindFirstChild("Label")
+                        
+                        if oldButton then
+                            print("✅ Botão antigo encontrado, substituindo...")
+                            
+                            local bottomTextClone = oldBottomText and oldBottomText:Clone()
+                            local labelClone = oldLabel and oldLabel:Clone()
+                            
+                            local newButton = oldButton:Clone()
+                            newButton.Name = "TB"
+                            newButton.Text = "Dragon Drive"
+                            
+                            oldButton:Destroy()
+                            if oldBottomText then oldBottomText:Destroy() end
+                            if oldLabel then oldLabel:Destroy() end
+                            
+                            newButton.Parent = widget
+                            
+                            if bottomTextClone then
+                                bottomTextClone.Text = "Ball"
+                                bottomTextClone.Parent = widget
+                            end
+                            
+                            if labelClone then
+                                labelClone.Text = "1"
+                                labelClone.Parent = widget
+                            end
+                            
+                            newButton.MouseButton1Click:Connect(dragonDrive)
+                            
+                            print("✅✅✅ Botão Dragon Drive configurado com sucesso no slot 1!")
+                            return
+                        else
+                            warn("❌ TextButton não encontrado no Widget!")
+                        end
+                    end
+                end
+            end
+        end
+    end
+    
+    warn("⚠️ Não foi possível encontrar o Holder com Label '1'")
+end
+
+-- Aguarda o personagem carregar antes de configurar
+player.CharacterAdded:Connect(function()
+    print("👤 Personagem carregado, configurando botão...")
+    setupHotbarButton()
+end)
+
+-- Se o personagem já estiver carregado
+if player.Character then
+    print("👤 Personagem já carregado, configurando botão...")
+    setupHotbarButton()
+end
+task.wait()
+-- Dragon Header
+-- LocalScript em StarterPlayer > StarterPlayerScripts
+
+local Players = game:GetService("Players")
+local TweenService = game:GetService("TweenService")
+local SoundService = game:GetService("SoundService")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local UserInputService = game:GetService("UserInputService")
+
+local player = Players.LocalPlayer
+local playerGui = player:WaitForChild("PlayerGui")
+
+print("🎮 Script Dragon Header carregado!")
+
+-- ===== CONFIGURAÇÕES =====
+local KICK_FORCE = 190
+local KICK_COOLDOWN = 4
+local FORWARD_FORCE = 80
+local FORWARD_TIME = 0.4
+local DIVE_ANGLE = -100
+local KICK_DELAY = 0.2
+-- =========================
+
+local isExecuting = false
+local isOnCooldown = false
+
+-- === FUNÇÃO PARA MOSTRAR MENSAGEM ===
+local function showMessage(message, duration)
+    local messagesEvent = ReplicatedStorage:FindFirstChild("Events")
+    if messagesEvent then
+        messagesEvent = messagesEvent:FindFirstChild("Messages")
+        if messagesEvent then
+            local sendMessage = messagesEvent:FindFirstChild("SendMessage")
+            if sendMessage then
+                firesignal(sendMessage.OnClientEvent, message, duration)
+                print("📢 Mensagem enviada: " .. message)
+            end
+        end
+    end
+end
+
+-- === FUNÇÃO PARA VERIFICAR SE O JOGADOR TEM A BOLA ===
+local function playerHasBall()
+    local playerFolder = workspace:FindFirstChild(player.Name)
+    
+    if not playerFolder then
+        print("❌ Pasta do LocalPlayer não encontrada no Workspace!")
+        return false
+    end
+    
+    local ball = playerFolder:FindFirstChild("Ball")
+    
+    if ball then
+        print("✅ LocalPlayer possui a bola!")
+        return true
+    else
+        print("❌ LocalPlayer NÃO possui a bola!")
+        return false
+    end
+end
+
+-- === FUNÇÃO PARA ADICIONAR EFEITO SAE NA BOLA (NO JOGADOR) ===
+local function addSaeEffectToBallInPlayer()
+    local playerFolder = workspace:FindFirstChild(player.Name)
+    if not playerFolder then 
+        warn("⚠️ Pasta do jogador não encontrada!")
+        return nil
+    end
+    
+    local ball = playerFolder:FindFirstChild("Ball")
+    if not ball or not ball:IsA("BasePart") then 
+        warn("⚠️ Bola não encontrada na pasta do jogador!")
+        return nil
+    end
+    
+    local vfxFolder = ReplicatedStorage:FindFirstChild("VFX")
+    if not vfxFolder then 
+        warn("⚠️ Pasta VFX não encontrada!")
+        return nil
+    end
+    
+    local saeEffect = vfxFolder:FindFirstChild("SaeCurvedShot")
+    if not saeEffect then 
+        warn("⚠️ SaeCurvedShot não encontrado!")
+        return nil
+    end
+    
+    local effectClone = saeEffect:Clone()
+    effectClone.CanCollide = false
+    effectClone.Anchored = false
+    effectClone.Massless = true
+    
+    local weld = Instance.new("WeldConstraint")
+    weld.Part0 = ball
+    weld.Part1 = effectClone
+    weld.Parent = effectClone
+    
+    effectClone.CFrame = ball.CFrame
+    effectClone.Parent = ball
+    
+    print("✨ Efeito adicionado à bola (enquanto no jogador)!")
+    
+    return effectClone
+end
+
+-- === FUNÇÃO PARA ADICIONAR EFEITO SAE NA BOLA (NO WORKSPACE) ===
+local function addSaeEffectToBallInWorld()
+    -- Procura a bola no workspace
+    local ballInWorld = workspace:FindFirstChild("Ball") or 
+                        workspace:FindFirstChild("SoccerBall") or 
+                        workspace:FindFirstChild("Football")
+    
+    if not ballInWorld or not ballInWorld:IsA("BasePart") then 
+        warn("⚠️ Bola não encontrada no workspace!")
+        return
+    end
+    
+    local vfxFolder = ReplicatedStorage:FindFirstChild("VFX")
+    if not vfxFolder then 
+        warn("⚠️ Pasta VFX não encontrada!")
+        return
+    end
+    
+    local saeEffect = vfxFolder:FindFirstChild("SaeCurvedShot")
+    if not saeEffect then 
+        warn("⚠️ SaeCurvedShot não encontrado!")
+        return
+    end
+    
+    local effectClone = saeEffect:Clone()
+    effectClone.CanCollide = false
+    effectClone.Anchored = false
+    effectClone.Massless = true
+    
+    local weld = Instance.new("WeldConstraint")
+    weld.Part0 = ballInWorld
+    weld.Part1 = effectClone
+    weld.Parent = effectClone
+    
+    effectClone.CFrame = ballInWorld.CFrame
+    effectClone.Parent = ballInWorld
+    
+    print("✨ Efeito adicionado à bola (no workspace após chute)!")
+    
+    -- Remove o efeito após 2 segundos
+    task.delay(2, function()
+        if effectClone and effectClone.Parent then
+            effectClone:Destroy()
+            print("🗑️ Efeito removido da bola!")
+        end
+    end)
+end
+
+-- === FUNÇÃO PARA ADICIONAR EFEITO SAE NO JOGADOR ===
+local function addSaeEffectToPlayer(character)
+    if not character then return nil end
+    
+    local root = character:FindFirstChild("HumanoidRootPart")
+    if not root then return nil end
+    
+    local vfxFolder = ReplicatedStorage:FindFirstChild("VFX")
+    if not vfxFolder then return nil end
+    
+    local saeEffect = vfxFolder:FindFirstChild("SaeCurvedShot")
+    if not saeEffect then return nil end
+    
+    local effectClone = saeEffect:Clone()
+    effectClone.CanCollide = false
+    effectClone.Anchored = false
+    effectClone.Massless = true
+    
+    local weld = Instance.new("WeldConstraint")
+    weld.Part0 = root
+    weld.Part1 = effectClone
+    weld.Parent = effectClone
+    
+    effectClone.CFrame = root.CFrame
+    effectClone.Parent = character
+    
+    print("✨ Efeito adicionado ao jogador!")
+    
+    return effectClone
+end
+
+-- === FUNÇÃO PARA INCLINAR O PERSONAGEM PRA FRENTE ===
+local function applyDiveRotation(root)
+    local bodyGyro = Instance.new("BodyGyro")
+    bodyGyro.MaxTorque = Vector3.new(9e9, 9e9, 9e9)
+    bodyGyro.P = 10000
+    bodyGyro.D = 500
+    
+    local forwardDirection = root.CFrame.LookVector
+    
+    local tiltedCFrame = CFrame.lookAt(
+        root.Position,
+        root.Position + forwardDirection
+    ) * CFrame.Angles(math.rad(DIVE_ANGLE), 0, 0)
+    
+    bodyGyro.CFrame = tiltedCFrame
+    bodyGyro.Parent = root
+    
+    print("🔄 Rotação de mergulho aplicada!")
+    return bodyGyro
+end
+
+-- === FUNÇÃO PARA ANIMAR O COOLDOWN VISUAL ===
+local function animateCooldown(fillFrame)
+    if not fillFrame then 
+        warn("⚠️ Fill não encontrado!")
+        return 
+    end
+    
+    print("✅ Fill encontrado, iniciando animação...")
+    
+    fillFrame.Size = UDim2.new(1, 0, 0, 0)
+    fillFrame.Visible = true
+    fillFrame.Size = UDim2.new(1, 0, 0, 60)
+    
+    local tweenInfo = TweenInfo.new(
+        KICK_COOLDOWN,
+        Enum.EasingStyle.Linear,
+        Enum.EasingDirection.InOut
+    )
+    
+    local tween = TweenService:Create(fillFrame, tweenInfo, {
+        Size = UDim2.new(1, 0, 0, 0)
+    })
+    
+    tween:Play()
+    print("🔄 Cooldown visual ativado!")
+end
+
+-- === FUNÇÃO PRINCIPAL DO DRAGON HEADER ===
+local function executeDragonHeader()
+    print("🐉 Função executeDragonHeader() chamada!")
+    
+    if isExecuting or isOnCooldown then
+        print("⏳ Aguarde o cooldown terminar!")
+        return
+    end
+    
+    if not playerHasBall() then
+        print("🚫 Você precisa ter a bola!")
+        showMessage("Must Have The Ball", 1.5)
+        return
+    end
+    
+    local character = player.Character
+    if not character then 
+        warn("❌ Character não encontrado!")
+        return 
+    end
+    
+    local root = character:FindFirstChild("HumanoidRootPart")
+    local humanoid = character:FindFirstChild("Humanoid")
+    if not root or not humanoid then 
+        warn("❌ HumanoidRootPart ou Humanoid não encontrado!")
+        return 
+    end
+    
+    isExecuting = true
+    isOnCooldown = true
+    
+    print("✅ Dragon Header iniciado!")
+    
+    local animator = humanoid:FindFirstChild("Animator") or humanoid:WaitForChild("Animator", 5)
+    if not animator then
+        isExecuting = false
+        isOnCooldown = false
+        return
+    end
+    
+    -- Salva e desativa ShiftLock temporariamente
+    local wasShiftLockEnabled = UserInputService.MouseBehavior == Enum.MouseBehavior.LockCenter
+    local cameraModule = nil
+    local originalAutoRotate = humanoid.AutoRotate
+    
+    humanoid.AutoRotate = false
+    
+    pcall(function()
+        local playerScripts = player:WaitForChild("PlayerScripts", 1)
+        if playerScripts then
+            local playerModule = playerScripts:FindFirstChild("PlayerModule")
+            if playerModule then
+                cameraModule = require(playerModule:WaitForChild("CameraModule"))
+                if cameraModule and wasShiftLockEnabled then
+                    UserInputService.MouseBehavior = Enum.MouseBehavior.Default
+                    print("🔓 ShiftLock desativado temporariamente!")
+                end
+            end
+        end
+    end)
+    
+    local originalWalkSpeed = humanoid.WalkSpeed
+    humanoid.WalkSpeed = 0
+    
+    local originalState = humanoid:GetState()
+    humanoid:ChangeState(Enum.HumanoidStateType.Physics)
+    
+    -- EFEITO NO JOGADOR
+    local playerEffect = addSaeEffectToPlayer(character)
+    
+    -- EFEITO NA BOLA (ENQUANTO NO JOGADOR)
+    local ballEffect = addSaeEffectToBallInPlayer()
+    
+    -- Animação RainbowFlick
+    print("🌈 RainbowFlick iniciado!")
+    local rainbowAnim = ReplicatedStorage:WaitForChild("Anims"):WaitForChild("RainbowFlick")
+    local animTrack = animator:LoadAnimation(rainbowAnim)
+    animTrack:Play()
+    
+    task.wait(0.1)
+    
+    -- Aplica rotação de mergulho
+    local bodyGyro = applyDiveRotation(root)
+    
+    -- Impulso pra frente e pra cima
+    local forwardDirection = root.CFrame.LookVector
+    local bodyVel = Instance.new("BodyVelocity")
+    bodyVel.MaxForce = Vector3.new(math.huge, math.huge, math.huge)
+    bodyVel.Velocity = (forwardDirection * FORWARD_FORCE) + Vector3.new(0, 20, 0)
+    bodyVel.Parent = root
+    
+    print("🚀 Impulso de mergulho aplicado!")
+    
+    task.delay(FORWARD_TIME, function()
+        if bodyVel and bodyVel.Parent then
+            bodyVel:Destroy()
+            print("⏹️ Impulso removido!")
+        end
+    end)
+    
+    -- Aguarda o tempo definido antes de chutar
+    task.wait(KICK_DELAY)
+    
+    -- Remove efeito do jogador com fade suave
+    if playerEffect and playerEffect.Parent then
+        local fadeDuration = 0.4
+        local fadeSteps = 20
+        local fadeInterval = fadeDuration / fadeSteps
+        
+        task.spawn(function()
+            for i = 1, fadeSteps do
+                if playerEffect and playerEffect.Parent then
+                    playerEffect.Transparency = i / fadeSteps
+                    
+                    for _, descendant in pairs(playerEffect:GetDescendants()) do
+                        if descendant:IsA("BasePart") or descendant:IsA("MeshPart") then
+                            descendant.Transparency = i / fadeSteps
+                        elseif descendant:IsA("ParticleEmitter") then
+                            descendant.Transparency = NumberSequence.new(i / fadeSteps)
+                        elseif descendant:IsA("Beam") or descendant:IsA("Trail") then
+                            descendant.Transparency = NumberSequence.new(i / fadeSteps)
+                        end
+                    end
+                    
+                    task.wait(fadeInterval)
+                else
+                    break
+                end
+            end
+            
+            if playerEffect and playerEffect.Parent then
+                playerEffect:Destroy()
+                print("🗑️ Efeito removido do jogador com fade!")
+            end
+        end)
+    end
+    
+    -- Remove efeito da bola (que está no jogador) com fade
+    if ballEffect and ballEffect.Parent then
+        local fadeDuration = 0.4
+        local fadeSteps = 20
+        local fadeInterval = fadeDuration / fadeSteps
+        
+        task.spawn(function()
+            for i = 1, fadeSteps do
+                if ballEffect and ballEffect.Parent then
+                    ballEffect.Transparency = i / fadeSteps
+                    
+                    for _, descendant in pairs(ballEffect:GetDescendants()) do
+                        if descendant:IsA("BasePart") or descendant:IsA("MeshPart") then
+                            descendant.Transparency = i / fadeSteps
+                        elseif descendant:IsA("ParticleEmitter") then
+                            descendant.Transparency = NumberSequence.new(i / fadeSteps)
+                        elseif descendant:IsA("Beam") or descendant:IsA("Trail") then
+                            descendant.Transparency = NumberSequence.new(i / fadeSteps)
+                        end
+                    end
+                    
+                    task.wait(fadeInterval)
+                else
+                    break
+                end
+            end
+            
+            if ballEffect and ballEffect.Parent then
+                ballEffect:Destroy()
+                print("🗑️ Efeito removido da bola (jogador) com fade!")
+            end
+        end)
+    end
+    
+    -- Para animação
+    animTrack:Stop()
+    print("⏸️ Animação parada!")
+    
+    -- CHUTE
+    print("⚽ CHUTE!")
+    
+    if playerHasBall() then
+        local camera = workspace.CurrentCamera
+        local kickDirection = camera.CFrame.LookVector.Unit
+        
+        local shootEvent = ReplicatedStorage:FindFirstChild("Events")
+        if shootEvent then
+            shootEvent = shootEvent:FindFirstChild("ShootBall")
+            if shootEvent then
+                shootEvent:FireServer(kickDirection, KICK_FORCE)
+                print("⚽ Bola chutada com força " .. KICK_FORCE .. "!")
+                
+                -- Adiciona efeito na bola após o chute (no workspace)
+                task.delay(0.15, function()
+                    addSaeEffectToBallInWorld()
+                end)
+            else
+                warn("⚠️ ShootBall não encontrado!")
+            end
+        else
+            warn("⚠️ Events não encontrado!")
+        end
+    else
+        print("❌ Bola foi perdida!")
+    end
+    
+    task.wait(0.3)
+    if bodyGyro and bodyGyro.Parent then
+        bodyGyro:Destroy()
+        print("🗑️ Rotação removida!")
+    end
+    
+    -- Restaura ShiftLock
+    if wasShiftLockEnabled then
+        UserInputService.MouseBehavior = Enum.MouseBehavior.LockCenter
+        print("🔒 ShiftLock restaurado!")
+    end
+    
+    humanoid.AutoRotate = originalAutoRotate
+    humanoid:ChangeState(Enum.HumanoidStateType.GettingUp)
+    
+    task.wait(0.2)
+    
+    humanoid.WalkSpeed = originalWalkSpeed
+    isExecuting = false
+    
+    -- Cooldown visual na Hotbar
+    local hotbar = playerGui:FindFirstChild("Hotbar")
+    if hotbar then
+        print("✅ Hotbar encontrada!")
+        local container = hotbar:FindFirstChild("Container")
+        if container then
+            print("✅ Container encontrado!")
+            for _, holder in ipairs(container:GetChildren()) do
+                if holder:IsA("Frame") and holder.Name == "Holder" then
+                    local widget = holder:FindFirstChild("Widget")
+                    if widget then
+                        local label = widget:FindFirstChild("Label")
+                        
+                        if label and label:IsA("TextLabel") then
+                            print("🔍 Label encontrado com texto: '" .. label.Text .. "'")
+                            
+                            if label.Text == "2" then
+                                print("✅ Holder com Label '2' encontrado!")
+                                
+                                local fill = widget:FindFirstChild("Fill")
+                                if fill then
+                                    print("✅ Fill encontrado no Holder correto!")
+                                    animateCooldown(fill)
+                                    break
+                                else
+                                    warn("❌ Fill não encontrado no Widget do Holder '2'!")
+                                end
+                            end
+                        end
+                    end
+                end
+            end
+        else
+            warn("❌ Container não encontrado!")
+        end
+    else
+        warn("❌ Hotbar não encontrada!")
+    end
+    
+    task.wait(KICK_COOLDOWN)
+    isOnCooldown = false
+    
+    print("✅ Dragon Header pronto para usar novamente!")
+end
+
+-- === PROCURA E SUBSTITUI O BOTÃO NA HOTBAR ===
+local function setupHotbarButton()
+    print("🔍 Procurando Hotbar...")
+    
+    local hotbar = playerGui:WaitForChild("Hotbar", 10)
+    if not hotbar then
+        warn("❌ Hotbar não encontrada após 10 segundos!")
+        return
+    end
+    
+    print("✅ Hotbar encontrada!")
+    
+    local container = hotbar:WaitForChild("Container", 10)
+    if not container then
+        warn("❌ Container não encontrado!")
+        return
+    end
+    
+    print("✅ Container encontrado!")
+    print("🔍 Holders no Container:")
+    
+    for _, holder in ipairs(container:GetChildren()) do
+        if holder:IsA("Frame") and holder.Name == "Holder" then
+            local widget = holder:FindFirstChild("Widget")
+            if widget then
+                local label = widget:FindFirstChild("Label")
+                
+                if label and label:IsA("TextLabel") then
+                    print("   - Holder com Label: '" .. label.Text .. "'")
+                    
+                    if label.Text == "2" then
+                        print("✅ Holder com Label '2' ENCONTRADO!")
+                        
+                        local oldButton = widget:FindFirstChild("TextButton")
+                        local oldBottomText = widget:FindFirstChild("BottomText")
+                        local oldLabel = widget:FindFirstChild("Label")
+                        
+                        if oldButton then
+                            print("✅ Botão antigo encontrado, substituindo...")
+                            
+                            local bottomTextClone = oldBottomText and oldBottomText:Clone()
+                            local labelClone = oldLabel and oldLabel:Clone()
+                            
+                            local newButton = oldButton:Clone()
+                            newButton.Name = "TB"
+                            newButton.Text = "Dragon Header"
+                            
+                            oldButton:Destroy()
+                            if oldBottomText then oldBottomText:Destroy() end
+                            if oldLabel then oldLabel:Destroy() end
+                            
+                            newButton.Parent = widget
+                            
+                            if bottomTextClone then
+                                bottomTextClone.Text = "Ball"
+                                bottomTextClone.Parent = widget
+                            end
+                            
+                            if labelClone then
+                                labelClone.Text = "2"
+                                labelClone.Parent = widget
+                            end
+                            
+                            newButton.MouseButton1Click:Connect(executeDragonHeader)
+                            
+                            print("✅✅✅ Botão Dragon Header configurado com sucesso no slot 2!")
+                            return
+                        else
+                            warn("❌ TextButton não encontrado no Widget!")
+                        end
+                    end
+                end
+            end
+        end
+    end
+    
+    warn("⚠️ Não foi possível encontrar o Holder com Label '2'")
+end
+
+-- Aguarda o personagem carregar antes de configurar
+player.CharacterAdded:Connect(function()
+    print("👤 Personagem carregado, configurando botão...")
+    setupHotbarButton()
+end)
+
+-- Se o personagem já estiver carregado
+if player.Character then
+    print("👤 Personagem já carregado, configurando botão...")
+    setupHotbarButton()
+end
+
+print("✅ Script Dragon Header carregado completamente!")
+task.wait()
+-- Big Bang
+-- LocalScript em StarterPlayer > StarterPlayerScripts
+
+local Players = game:GetService("Players")
+local TweenService = game:GetService("TweenService")
+local SoundService = game:GetService("SoundService")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+
+local player = Players.LocalPlayer
+local playerGui = player:WaitForChild("PlayerGui")
+
+print("🎮 Script Big Bang carregado!")
+
+-- ===== CONFIGURAÇÕES =====
+local KICK_FORCE = 230
+local KICK_COOLDOWN = 5
+local UP_DISTANCE = 25
+local UP_TIME = 0.6
+local AIR_HOLD_TIME = 2
+-- =========================
+
+local isKicking = false
+local isOnCooldown = false
+
+-- === FUNÇÃO PARA MOSTRAR MENSAGEM ===
+local function showMessage(message, duration)
+    local messagesEvent = ReplicatedStorage:FindFirstChild("Events")
+    if messagesEvent then
+        messagesEvent = messagesEvent:FindFirstChild("Messages")
+        if messagesEvent then
+            local sendMessage = messagesEvent:FindFirstChild("SendMessage")
+            if sendMessage then
+                firesignal(sendMessage.OnClientEvent, message, duration)
+                print("📢 Mensagem enviada: " .. message)
+            end
+        end
+    end
+end
+
+-- === FUNÇÃO PARA VERIFICAR SE O JOGADOR TEM A BOLA ===
+local function playerHasBall()
+    local playerFolder = workspace:FindFirstChild(player.Name)
+    
+    if not playerFolder then
+        print("❌ Pasta do LocalPlayer não encontrada no Workspace!")
+        return false
+    end
+    
+    local ball = playerFolder:FindFirstChild("Ball")
+    
+    if ball then
+        print("✅ LocalPlayer possui a bola!")
+        return true
+    else
+        print("❌ LocalPlayer NÃO possui a bola!")
+        return false
+    end
+end
+
+-- === FUNÇÃO PARA TOCAR SOM DE CHUTE ===
+local function playKickSound()
+    local soundPath = SoundService:FindFirstChild("Characters")
+    if soundPath then
+        soundPath = soundPath:FindFirstChild("Chigiri")
+        if soundPath then
+            local kickSound = soundPath:FindFirstChild("ChigiriShot")
+            if kickSound and kickSound:IsA("Sound") then
+                kickSound:Play()
+                print("🔊 Som de chute tocado!")
+            end
+        end
+    end
+end
+
+-- === FUNÇÃO PARA CRIAR ASAS MAGENTA NO JOGADOR ===
+local function createMagentaWings(character)
+    if not character then return end
+    
+    local torso = character:FindFirstChild("Torso") or character:FindFirstChild("UpperTorso")
+    if not torso then return end
+    
+    local wingsFolder = Instance.new("Folder")
+    wingsFolder.Name = "MagentaWings"
+    wingsFolder.Parent = character
+    
+    local wingConfig = {
+        length = 8,
+        width = 4,
+        segments = 8,
+        spread = 45
+    }
+    
+    local function createWing(side)
+        local sideMultiplier = side == "Left" and -1 or 1
+        
+        for i = 1, wingConfig.segments do
+            local segment = Instance.new("Part")
+            segment.Name = side .. "WingSegment" .. i
+            segment.Size = Vector3.new(0.3, wingConfig.width * (1 - i/wingConfig.segments * 0.3), wingConfig.length / wingConfig.segments)
+            segment.Material = Enum.Material.Neon
+            segment.CanCollide = false
+            segment.Anchored = true
+            segment.Transparency = 0.2
+            segment.Massless = true
+            
+            local colorValue = 1 - (i / wingConfig.segments * 0.4)
+            segment.Color = Color3.fromRGB(255 * colorValue, 50 * colorValue, 255 * colorValue)
+            
+            local offset = i / wingConfig.segments
+            local angle = math.rad(wingConfig.spread * offset)
+            local xOffset = sideMultiplier * (2 + offset * 5)
+            local yOffset = -offset * 2
+            local zOffset = math.sin(angle) * 2
+            
+            segment.CFrame = torso.CFrame * CFrame.new(xOffset, yOffset, zOffset) * CFrame.Angles(0, sideMultiplier * angle, math.rad(sideMultiplier * 15))
+            segment.Parent = wingsFolder
+            
+            local att0 = Instance.new("Attachment")
+            att0.Position = Vector3.new(0, segment.Size.Y/2, 0)
+            att0.Parent = segment
+            
+            local att1 = Instance.new("Attachment")
+            att1.Position = Vector3.new(0, -segment.Size.Y/2, 0)
+            att1.Parent = segment
+            
+            local trail = Instance.new("Trail")
+            trail.Attachment0 = att0
+            trail.Attachment1 = att1
+            trail.Color = ColorSequence.new({
+                ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 100, 255)),
+                ColorSequenceKeypoint.new(0.5, Color3.fromRGB(200, 50, 200)),
+                ColorSequenceKeypoint.new(1, Color3.fromRGB(100, 0, 100))
+            })
+            trail.Transparency = NumberSequence.new({
+                NumberSequenceKeypoint.new(0, 0.4),
+                NumberSequenceKeypoint.new(1, 1)
+            })
+            trail.Lifetime = 0.5
+            trail.MinLength = 0.1
+            trail.LightEmission = 1
+            trail.Parent = segment
+            
+            local particles = Instance.new("ParticleEmitter")
+            particles.Texture = "rbxasset://textures/particles/sparkles_main.dds"
+            particles.Color = ColorSequence.new({
+                ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 150, 255)),
+                ColorSequenceKeypoint.new(1, Color3.fromRGB(200, 50, 200))
+            })
+            particles.Transparency = NumberSequence.new({
+                NumberSequenceKeypoint.new(0, 0.3),
+                NumberSequenceKeypoint.new(1, 1)
+            })
+            particles.Size = NumberSequence.new({
+                NumberSequenceKeypoint.new(0, 0.5),
+                NumberSequenceKeypoint.new(1, 0)
+            })
+            particles.Lifetime = NumberRange.new(0.3, 0.6)
+            particles.Rate = 30
+            particles.Speed = NumberRange.new(2, 5)
+            particles.SpreadAngle = Vector2.new(30, 30)
+            particles.LightEmission = 1
+            particles.Parent = segment
+            
+            local smoke = Instance.new("ParticleEmitter")
+            smoke.Texture = "rbxasset://textures/particles/smoke_main.dds"
+            smoke.Color = ColorSequence.new({
+                ColorSequenceKeypoint.new(0, Color3.fromRGB(180, 50, 180)),
+                ColorSequenceKeypoint.new(1, Color3.fromRGB(100, 0, 100))
+            })
+            smoke.Transparency = NumberSequence.new({
+                NumberSequenceKeypoint.new(0, 0.6),
+                NumberSequenceKeypoint.new(1, 1)
+            })
+            smoke.Size = NumberSequence.new({
+                NumberSequenceKeypoint.new(0, 0.8),
+                NumberSequenceKeypoint.new(1, 2)
+            })
+            smoke.Lifetime = NumberRange.new(0.4, 0.8)
+            smoke.Rate = 20
+            smoke.Speed = NumberRange.new(1, 3)
+            smoke.SpreadAngle = Vector2.new(40, 40)
+            smoke.LightEmission = 0.4
+            smoke.Parent = segment
+        end
+    end
+    
+    createWing("Left")
+    createWing("Right")
+    
+    task.spawn(function()
+        local duration = 2.5
+        local startTime = tick()
+        
+        while tick() - startTime < duration do
+            if not torso or not torso.Parent then break end
+            
+            for _, segment in ipairs(wingsFolder:GetChildren()) do
+                if segment:IsA("BasePart") then
+                    local wobble = math.sin(tick() * 8) * 0.05
+                    
+                    local segmentIndex = tonumber(segment.Name:match("%d+"))
+                    local side = segment.Name:match("Left") and "Left" or "Right"
+                    local sideMultiplier = side == "Left" and -1 or 1
+                    
+                    local offset = segmentIndex / wingConfig.segments
+                    local angle = math.rad(wingConfig.spread * offset)
+                    local xOffset = sideMultiplier * (2 + offset * 5)
+                    local yOffset = -offset * 2
+                    local zOffset = math.sin(angle) * 2
+                    
+                    segment.CFrame = torso.CFrame * CFrame.new(xOffset, yOffset, zOffset) * CFrame.Angles(wobble, sideMultiplier * angle, math.rad(sideMultiplier * 15))
+                end
+            end
+            task.wait(0.03)
+        end
+        
+        for _, segment in ipairs(wingsFolder:GetChildren()) do
+            if segment:IsA("BasePart") then
+                TweenService:Create(segment, TweenInfo.new(0.5), {Transparency = 1}):Play()
+            end
+        end
+        
+        task.wait(0.5)
+        wingsFolder:Destroy()
+    end)
+end
+
+-- === FUNÇÃO PARA CRIAR TRILHA ROSA NA BOLA ===
+local function createPinkTrail(ball)
+    if not ball or not ball:IsA("BasePart") then return end
+    
+    local attachment0 = Instance.new("Attachment")
+    attachment0.Name = "TrailAttachment0"
+    attachment0.Parent = ball
+    
+    local attachment1 = Instance.new("Attachment")
+    attachment1.Name = "TrailAttachment1"
+    attachment1.Parent = ball
+    
+    local trail = Instance.new("Trail")
+    trail.Name = "PinkTrail"
+    trail.Attachment0 = attachment0
+    trail.Attachment1 = attachment1
+    trail.Color = ColorSequence.new({
+        ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 0, 255)),
+        ColorSequenceKeypoint.new(0.3, Color3.fromRGB(255, 105, 180)),
+        ColorSequenceKeypoint.new(0.7, Color3.fromRGB(200, 50, 150)),
+        ColorSequenceKeypoint.new(1, Color3.fromRGB(80, 0, 80))
+    })
+    trail.Transparency = NumberSequence.new({
+        NumberSequenceKeypoint.new(0, 0.3),
+        NumberSequenceKeypoint.new(0.5, 0.5),
+        NumberSequenceKeypoint.new(1, 1)
+    })
+    trail.WidthScale = NumberSequence.new({
+        NumberSequenceKeypoint.new(0, 0.8),
+        NumberSequenceKeypoint.new(0.5, 0.5),
+        NumberSequenceKeypoint.new(1, 0)
+    })
+    trail.Lifetime = 0.6
+    trail.MinLength = 0.3
+    trail.MaxLength = 2
+    trail.LightEmission = 1
+    trail.LightInfluence = 0
+    trail.FaceCamera = true
+    trail.Parent = ball
+    
+    local particles = Instance.new("ParticleEmitter")
+    particles.Name = "PinkExplosion"
+    particles.Parent = ball
+    particles.Texture = "rbxasset://textures/particles/sparkles_main.dds"
+    particles.Color = ColorSequence.new({
+        ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 255, 255)),
+        ColorSequenceKeypoint.new(0.3, Color3.fromRGB(255, 150, 255)),
+        ColorSequenceKeypoint.new(0.7, Color3.fromRGB(200, 0, 200)),
+        ColorSequenceKeypoint.new(1, Color3.fromRGB(50, 0, 50))
+    })
+    particles.Transparency = NumberSequence.new({
+        NumberSequenceKeypoint.new(0, 0),
+        NumberSequenceKeypoint.new(0.3, 0.4),
+        NumberSequenceKeypoint.new(1, 1)
+    })
+    particles.Size = NumberSequence.new({
+        NumberSequenceKeypoint.new(0, 0.5),
+        NumberSequenceKeypoint.new(0.5, 2.5),
+        NumberSequenceKeypoint.new(1, 0)
+    })
+    particles.Lifetime = NumberRange.new(0.4, 1.2)
+    particles.Rate = 200
+    particles.Speed = NumberRange.new(8, 15)
+    particles.SpreadAngle = Vector2.new(180, 180)
+    particles.Drag = 3
+    particles.LightEmission = 1
+    particles.LightInfluence = 0
+    particles.Acceleration = Vector3.new(0, -5, 0)
+    
+    local smokeParticles = Instance.new("ParticleEmitter")
+    smokeParticles.Name = "PinkSmoke"
+    smokeParticles.Parent = ball
+    smokeParticles.Texture = "rbxasset://textures/particles/smoke_main.dds"
+    smokeParticles.Color = ColorSequence.new({
+        ColorSequenceKeypoint.new(0, Color3.fromRGB(150, 0, 150)),
+        ColorSequenceKeypoint.new(1, Color3.fromRGB(50, 0, 50))
+    })
+    smokeParticles.Transparency = NumberSequence.new({
+        NumberSequenceKeypoint.new(0, 0.5),
+        NumberSequenceKeypoint.new(1, 1)
+    })
+    smokeParticles.Size = NumberSequence.new({
+        NumberSequenceKeypoint.new(0, 1.5),
+        NumberSequenceKeypoint.new(1, 4)
+    })
+    smokeParticles.Lifetime = NumberRange.new(0.6, 1.2)
+    smokeParticles.Rate = 80
+    smokeParticles.Speed = NumberRange.new(3, 6)
+    smokeParticles.SpreadAngle = Vector2.new(180, 180)
+    smokeParticles.Drag = 5
+    smokeParticles.LightEmission = 0.3
+    smokeParticles.LightInfluence = 0.2
+    
+    local sparkles = Instance.new("ParticleEmitter")
+    sparkles.Name = "MagentaSparkles"
+    sparkles.Parent = ball
+    sparkles.Texture = "rbxasset://textures/particles/sparkles_main.dds"
+    sparkles.Color = ColorSequence.new({
+        ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 100, 255)),
+        ColorSequenceKeypoint.new(1, Color3.fromRGB(150, 0, 150))
+    })
+    sparkles.Transparency = NumberSequence.new({
+        NumberSequenceKeypoint.new(0, 0.2),
+        NumberSequenceKeypoint.new(1, 1)
+    })
+    sparkles.Size = NumberSequence.new({
+        NumberSequenceKeypoint.new(0, 0.3),
+        NumberSequenceKeypoint.new(1, 0)
+    })
+    sparkles.Lifetime = NumberRange.new(0.2, 0.5)
+    sparkles.Rate = 150
+    sparkles.Speed = NumberRange.new(15, 25)
+    sparkles.SpreadAngle = Vector2.new(180, 180)
+    sparkles.Drag = 8
+    sparkles.LightEmission = 1
+    sparkles.LightInfluence = 0
+    
+    local glitter = Instance.new("ParticleEmitter")
+    glitter.Name = "PinkGlitter"
+    glitter.Parent = ball
+    glitter.Texture = "rbxasset://textures/particles/sparkles_main.dds"
+    glitter.Color = ColorSequence.new(Color3.fromRGB(255, 200, 255))
+    glitter.Transparency = NumberSequence.new({
+        NumberSequenceKeypoint.new(0, 0),
+        NumberSequenceKeypoint.new(0.5, 0.5),
+        NumberSequenceKeypoint.new(1, 1)
+    })
+    glitter.Size = NumberSequence.new({
+        NumberSequenceKeypoint.new(0, 0.8),
+        NumberSequenceKeypoint.new(0.5, 1.2),
+        NumberSequenceKeypoint.new(1, 0)
+    })
+    glitter.Lifetime = NumberRange.new(0.5, 1)
+    glitter.Rate = 100
+    glitter.Speed = NumberRange.new(5, 10)
+    glitter.SpreadAngle = Vector2.new(180, 180)
+    glitter.Drag = 4
+    glitter.LightEmission = 1
+    glitter.LightInfluence = 0
+    glitter.Rotation = NumberRange.new(0, 360)
+    glitter.RotSpeed = NumberRange.new(-200, 200)
+    
+    task.delay(5, function()
+        if trail then trail:Destroy() end
+        if particles then particles:Destroy() end
+        if smokeParticles then smokeParticles:Destroy() end
+        if sparkles then sparkles:Destroy() end
+        if glitter then glitter:Destroy() end
+        if attachment0 then attachment0:Destroy() end
+        if attachment1 then attachment1:Destroy() end
+    end)
+end
+
+-- === FUNÇÃO PARA ANIMAR O COOLDOWN VISUAL ===
+local function animateCooldown(fillFrame)
+    if not fillFrame then 
+        warn("⚠️ Fill não encontrado!")
+        return 
+    end
+    
+    print("✅ Fill encontrado, iniciando animação...")
+    
+    fillFrame.Size = UDim2.new(1, 0, 0, 0)
+    fillFrame.Visible = true
+    fillFrame.Size = UDim2.new(1, 0, 0, 60)
+    
+    local tweenInfo = TweenInfo.new(
+        KICK_COOLDOWN,
+        Enum.EasingStyle.Linear,
+        Enum.EasingDirection.InOut
+    )
+    
+    local tween = TweenService:Create(fillFrame, tweenInfo, {
+        Size = UDim2.new(1, 0, 0, 0)
+    })
+    
+    tween:Play()
+    print("🔄 Cooldown visual ativado!")
+end
+
+-- === FUNÇÃO PRINCIPAL DO BIG BANG ===
+local function executeBigBang()
+    print("💥 Função executeBigBang() chamada!")
+    
+    if isKicking or isOnCooldown then
+        print("⏳ Aguarde o cooldown terminar!")
+        return
+    end
+    
+    if not playerHasBall() then
+        print("🚫 Você precisa ter a bola!")
+        showMessage("Must Have The Ball", 1.5)
+        return
+    end
+    
+    local character = player.Character
+    if not character then 
+        warn("❌ Character não encontrado!")
+        return 
+    end
+    
+    local root = character:FindFirstChild("HumanoidRootPart")
+    local humanoid = character:FindFirstChild("Humanoid")
+    if not root or not humanoid then 
+        warn("❌ HumanoidRootPart ou Humanoid não encontrado!")
+        return 
+    end
+    
+    isKicking = true
+    isOnCooldown = true
+    
+    print("✅ Big Bang iniciado!")
+    
+    local animator = humanoid:FindFirstChild("Animator") or humanoid:WaitForChild("Animator", 5)
+    if not animator then
+        isKicking = false
+        isOnCooldown = false
+        return
+    end
+    
+    local originalWalkSpeed = humanoid.WalkSpeed
+    humanoid.WalkSpeed = 0
+    
+    -- Animação inicial
+    local goatFlipAnim = ReplicatedStorage:WaitForChild("Anims"):WaitForChild("Ronaldo"):WaitForChild("GoatFlipsStart")
+    local goatFlipTrack = animator:LoadAnimation(goatFlipAnim)
+    goatFlipTrack:Play()
+    goatFlipTrack:AdjustSpeed(0.5)
+    
+    task.wait(1)
+    goatFlipTrack:Stop()
+    
+    -- Sobe
+    local upVelocity = UP_DISTANCE / UP_TIME
+    local bvUp = Instance.new("BodyVelocity")
+    bvUp.MaxForce = Vector3.new(0, math.huge, 0)
+    bvUp.Velocity = Vector3.new(0, upVelocity, 0)
+    bvUp.Parent = root
+    
+    -- Animação no ar
+    local airAnim = ReplicatedStorage:WaitForChild("CutsceneAnimations"):WaitForChild("Beinschuss"):WaitForChild("Animation")
+    local airTrack = animator:LoadAnimation(airAnim)
+    airTrack:Play()
+    airTrack:AdjustSpeed(2)
+    
+    task.wait(UP_TIME)
+    
+    if bvUp then bvUp:Destroy() end
+    
+    -- Para no ar
+    local bvHold = Instance.new("BodyVelocity")
+    bvHold.MaxForce = Vector3.new(math.huge, math.huge, math.huge)
+    bvHold.Velocity = Vector3.new(0, 0, 0)
+    bvHold.Parent = root
+    
+    -- Cria asas magenta
+    createMagentaWings(character)
+    
+    task.wait(AIR_HOLD_TIME)
+    
+    -- CHUTE
+    if playerHasBall() then
+        local camera = workspace.CurrentCamera
+        local kickDirection = camera.CFrame.LookVector.Unit
+        playKickSound()
+        
+        local shootEvent = ReplicatedStorage:FindFirstChild("Events")
+        if shootEvent then
+            shootEvent = shootEvent:FindFirstChild("ShootBall")
+            if shootEvent then
+                shootEvent:FireServer(kickDirection, KICK_FORCE)
+                print("⚽ Bola chutada!")
+                
+                task.delay(0.1, function()
+                    local ballInWorld = workspace:FindFirstChild("Ball") or 
+                                      workspace:FindFirstChild("SoccerBall") or 
+                                      workspace:FindFirstChild("Football")
+                    if ballInWorld and ballInWorld:IsA("BasePart") then
+                        createPinkTrail(ballInWorld)
+                        print("✨ Efeitos rosa adicionados à bola!")
+                    end
+                end)
+            end
+        end
+    end
+    
+    task.wait(0.3)
+    
+    if airTrack then airTrack:Stop() end
+    if bvHold then bvHold:Destroy() end
+    
+    humanoid.WalkSpeed = originalWalkSpeed
+    isKicking = false
+    
+    -- Cooldown visual na Hotbar
+    local hotbar = playerGui:FindFirstChild("Hotbar")
+    if hotbar then
+        print("✅ Hotbar encontrada!")
+        local container = hotbar:FindFirstChild("Container")
+        if container then
+            print("✅ Container encontrado!")
+            for _, holder in ipairs(container:GetChildren()) do
+                if holder:IsA("Frame") and holder.Name == "Holder" then
+                    local widget = holder:FindFirstChild("Widget")
+                    if widget then
+                        local label = widget:FindFirstChild("Label")
+                        
+                        if label and label:IsA("TextLabel") then
+                            print("🔍 Label encontrado com texto: '" .. label.Text .. "'")
+                            
+                            if label.Text == "3" then
+                                print("✅ Holder com Label '3' encontrado!")
+                                
+                                local fill = widget:FindFirstChild("Fill")
+                                if fill then
+                                    print("✅ Fill encontrado no Holder correto!")
+                                    animateCooldown(fill)
+                                    break
+                                else
+                                    warn("❌ Fill não encontrado no Widget do Holder '3'!")
+                                end
+                            end
+                        end
+                    end
+                end
+            end
+        else
+            warn("❌ Container não encontrado!")
+        end
+    else
+        warn("❌ Hotbar não encontrada!")
+    end
+    
+    task.wait(KICK_COOLDOWN)
+    isOnCooldown = false
+    
+    print("✅ Big Bang pronto para usar novamente!")
+end
+
+-- === PROCURA E SUBSTITUI O BOTÃO NA HOTBAR ===
+local function setupHotbarButton()
+    print("🔍 Procurando Hotbar...")
+    
+    local hotbar = playerGui:WaitForChild("Hotbar", 10)
+    if not hotbar then
+        warn("❌ Hotbar não encontrada após 10 segundos!")
+        return
+    end
+    
+    print("✅ Hotbar encontrada!")
+    
+    local container = hotbar:WaitForChild("Container", 10)
+    if not container then
+        warn("❌ Container não encontrado!")
+        return
+    end
+    
+    print("✅ Container encontrado!")
+    print("🔍 Holders no Container:")
+    
+    for _, holder in ipairs(container:GetChildren()) do
+        if holder:IsA("Frame") and holder.Name == "Holder" then
+            local widget = holder:FindFirstChild("Widget")
+            if widget then
+                local label = widget:FindFirstChild("Label")
+                
+                if label and label:IsA("TextLabel") then
+                    print("   - Holder com Label: '" .. label.Text .. "'")
+                    
+                    if label.Text == "3" then
+                        print("✅ Holder com Label '3' ENCONTRADO!")
+                        
+                        local oldButton = widget:FindFirstChild("TextButton")
+                        local oldBottomText = widget:FindFirstChild("BottomText")
+                        local oldLabel = widget:FindFirstChild("Label")
+                        
+                        if oldButton then
+                            print("✅ Botão antigo encontrado, substituindo...")
+                            
+                            local bottomTextClone = oldBottomText and oldBottomText:Clone()
+                            local labelClone = oldLabel and oldLabel:Clone()
+                            
+                            local newButton = oldButton:Clone()
+                            newButton.Name = "TB"
+                            newButton.Text = "Big Bang"
+                            
+                            oldButton:Destroy()
+                            if oldBottomText then oldBottomText:Destroy() end
+                            if oldLabel then oldLabel:Destroy() end
+                            
+                            newButton.Parent = widget
+                            
+                            if bottomTextClone then
+                                bottomTextClone.Text = "Ball"
+                                bottomTextClone.Parent = widget
+                            end
+                            
+                            if labelClone then
+                                labelClone.Text = "3"
+                                labelClone.Parent = widget
+                            end
+                            
+                            newButton.MouseButton1Click:Connect(executeBigBang)
+                            
+                            print("✅✅✅ Botão Big Bang configurado com sucesso no slot 3!")
+                            return
+                        else
+                            warn("❌ TextButton não encontrado no Widget!")
+                        end
+                    end
+                end
+            end
+        end
+    end
+    
+    warn("⚠️ Não foi possível encontrar o Holder com Label '3'")
+end
+
+-- Aguarda o personagem carregar antes de configurar
+player.CharacterAdded:Connect(function()
+    print("👤 Personagem carregado, configurando botão...")
+    setupHotbarButton()
+end)
+
+-- Se o personagem já estiver carregado
+if player.Character then
+    print("👤 Personagem já carregado, configurando botão...")
+    setupHotbarButton()
+end
+
+print("✅ Script Big Bang carregado completamente!")
